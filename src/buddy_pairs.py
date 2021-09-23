@@ -38,7 +38,13 @@ BUDDY_PAIR = typing.List[int]
 BUDDY_PAIR_OR_NOTHING = typing.Union[BUDDY_PAIR, str]
 
 
-def get_divisors_sum(number: int) -> int:
+def buddy(start: int, limit: int) -> BUDDY_PAIR_OR_NOTHING:
+    for buddy_pair in _find_buddy_pairs(start, limit):
+        return buddy_pair
+    return "Nothing"
+
+
+def _get_divisors_sum(number: int) -> int:
     divisor_sum = 1
 
     for divisor in range(2, int(math.sqrt(number)) + 1):
@@ -52,20 +58,14 @@ def get_divisors_sum(number: int) -> int:
     return divisor_sum
 
 
-def find_buddy_pairs(start: int, limit: int) -> typing.Iterator[BUDDY_PAIR]:
+def _find_buddy_pairs(start: int, limit: int) -> typing.Iterator[BUDDY_PAIR]:
     for lower_partner in range(start, limit + 1):
-        divisors_sum = get_divisors_sum(lower_partner)
+        divisors_sum = _get_divisors_sum(lower_partner)
         if lower_partner > divisors_sum:
             continue
         greater_partner = divisors_sum - 1
-        if get_divisors_sum(greater_partner) == lower_partner + 1:
+        if _get_divisors_sum(greater_partner) == lower_partner + 1:
             yield [lower_partner, greater_partner]
-
-
-def buddy(start: int, limit: int) -> BUDDY_PAIR_OR_NOTHING:
-    for buddy_pair in find_buddy_pairs(start, limit):
-        return buddy_pair
-    return "Nothing"
 
 
 if __name__ == '__main__':
