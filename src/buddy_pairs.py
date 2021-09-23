@@ -34,24 +34,25 @@ import math
 import typing
 
 
-BUDDY_PAIR_OR_NOTHING = typing.Union[typing.List[int], str]
+BUDDY_PAIR = typing.List[int]
+BUDDY_PAIR_OR_NOTHING = typing.Union[BUDDY_PAIR, str]
 
 
 def get_divisors_sum(number: int) -> int:
     divisor_sum = 1
 
-    for potential_divisor in range(2, int(math.sqrt(number)) + 1):
-        if number % potential_divisor != 0:
+    for divisor in range(2, int(math.sqrt(number)) + 1):
+        if number % divisor != 0:
             continue
 
-        if (partnered_divisor := number // potential_divisor) != potential_divisor:
+        if (partnered_divisor := number // divisor) != divisor:
             divisor_sum += partnered_divisor
-        divisor_sum += potential_divisor
+        divisor_sum += divisor
 
     return divisor_sum
 
 
-def find_buddy_pairs(start: int, limit: int) -> typing.Iterator[typing.List[int]]:
+def find_buddy_pairs(start: int, limit: int) -> typing.Iterator[BUDDY_PAIR]:
     for lower_partner in range(start, limit + 1):
         divisors_sum = get_divisors_sum(lower_partner)
         if lower_partner > divisors_sum:
