@@ -14,7 +14,7 @@ Possible hands are, in descending order of value:
 
 - Straight-flush (five consecutive ranks of the same suit). Higher rank is better.
 - Four-of-a-kind (four cards with the same rank).
-- Tiebreaker is first the rank, then the rank of the remaining card.
+  Tiebreaker is first the rank, then the rank of the remaining card.
 - Full house (three cards with the same rank, two with another).
   Tiebreaker is first the rank of the three cards, then rank of the pair.
 - Flush (five cards of the same suit).
@@ -52,54 +52,6 @@ import enum
 import typing
 
 
-@dataclasses.dataclass
-class CardRank:
-    HIGHER_CARDS_VALUES = {
-        'J': 11,
-        'Q': 12,
-        'K': 13,
-        'A': 14,
-    }
-
-    def __init__(self, name: str) -> None:
-        self.name = name
-        self.value = self.get_value(rank=name)
-
-    @classmethod
-    def get_value(cls, rank: str) -> int:
-        return cls.HIGHER_CARDS_VALUES.get(rank) or int(rank)
-
-    def __lt__(self, other: typing.Any) -> bool:
-        assert isinstance(other, CardRank)
-
-        return self.value < other.value
-
-
-@dataclasses.dataclass
-class Card:
-    rank: CardRank
-    suit: str
-
-    @classmethod
-    def from_str(cls, representation: str) -> 'Card':
-        rank = CardRank(name=representation[:-1])
-        suit = representation[-1]
-        return cls(rank=rank, suit=suit)
-
-    def __lt__(self, other: object) -> bool:
-        assert isinstance(other, Card)
-
-        return self.rank < other.rank
-
-    def __eq__(self, other: object) -> bool:
-        assert isinstance(other, Card)
-
-        return repr(self) == repr(other)
-
-    def __repr__(self) -> str:
-        return f'{self.rank.name}{self.suit}'
-
-
 class CombinationName(str, enum.Enum):
     NOTHING = 'nothing'
     PAIR = 'pair'
@@ -112,125 +64,158 @@ class CombinationName(str, enum.Enum):
     STRAIGHT_FLUSH = 'straight-flush'
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
+class Card:
+    _HIGHER_CARDS_VALUES = {
+        'J': 11,
+        'Q': 12,
+        'K': 13,
+        'A': 14,
+    }
+
+    rank: str
+    suit: str
+    value: int
+
+    @classmethod
+    def from_str(cls, card_representation: str) -> 'Card':
+        rank = card_representation[:-1]
+        suit = card_representation[-1]
+        value = cls.get_value(rank=rank)
+        return cls(rank=rank, suit=suit, value=value)
+
+    @classmethod
+    def get_value(cls, rank: str) -> int:
+        return cls._HIGHER_CARDS_VALUES.get(rank) or int(rank)
+
+    def __lt__(self, other: object) -> bool:
+        assert isinstance(other, Card)
+
+        return self.value < other.value
+
+    def __eq__(self, other: object) -> bool:
+        assert isinstance(other, Card)
+
+        return repr(self) == repr(other)
+
+    def __repr__(self) -> str:
+        return f'{self.rank}{self.suit}'
+
+    def __hash__(self) -> int:
+        return hash(repr(self))
+
+
+@dataclasses.dataclass
 class Combination:
-    name: CombinationName
-    cards: typing.List[Card]
+    cards: typing.Set[Card]
+    name: CombinationName = CombinationName.NOTHING
+
+    @property
+    def is_sufficient(self) -> bool:
+        return len(self.cards) >= 5
+
+    def add_greatest_cards(self, ordered_cards: typing.List[Card]) -> None:
+        for greatest_card in ordered_cards:
+            self.cards.add(greatest_card)
+            if self.is_sufficient:
+                return
 
     @property
     def ranks(self) -> typing.List[str]:
-        return self._order_ranks_by_occurencies()
+        return self._ranks_ordered_by_occurencies
 
-    def _order_ranks_by_occurencies(self) -> typing.List[str]:
+    @property
+    def _ranks_ordered_by_occurencies(self) -> typing.List[str]:
         occurencies: typing.Counter[str] = collections.Counter()
         for card in self.cards:
-            occurencies[card.rank.name] += 1
+            occurencies[card.rank] += 1
         return sorted(
             list(occurencies.keys()),
-            key=lambda rank: (occurencies[rank], CardRank.get_value(rank)),
+            key=lambda rank: (occurencies[rank], Card.get_value(rank)),
             reverse=True,
         )
 
 
 class Hand:
     def __init__(self, cards: typing.List[Card]) -> None:
-        self.cards = sorted(cards, reverse=True)
+        self._cards = sorted(cards, reverse=True)
 
     @property
     def best_hand(self) -> Combination:
-        return self._fill_up_to_5_cards(combination=self._best_combination)
+        combination = self._find_winning_cards()
+        if not combination.is_sufficient:
+            combination.add_greatest_cards(ordered_cards=self._cards)
+        return combination
 
-    @property
-    def _best_combination(self) -> Combination:
-        if flush := self.flush:
-            if Hand(cards=flush).straight:
-                return Combination(name=CombinationName.STRAIGHT_FLUSH, cards=flush)
+    def _find_winning_cards(self) -> Combination:
+        straight = self._find_straight()
+        flush = self._find_flush()
+
+        if len(straight_flush := straight & flush) == 5:
+            return Combination(
+                name=CombinationName.STRAIGHT_FLUSH, cards=straight_flush
+            )
+        if flush:
             return Combination(name=CombinationName.FLUSH, cards=flush)
-
-        most_of_a_kind = self.most_of_a_kind
-        most_of_another_kind = self._other_hand_left(
-            cards_used=most_of_a_kind
-        ).most_of_a_kind
-
-        if len(most_of_a_kind) == 4:
-            return Combination(
-                name=CombinationName.FOUR_OF_A_KIND, cards=most_of_a_kind
-            )
-        if len(most_of_a_kind) == 3 and len(most_of_another_kind) >= 2:
-            return Combination(
-                name=CombinationName.FULL_HOUSE,
-                cards=most_of_a_kind + most_of_another_kind,
-            )
-        if straight := self.straight:
+        if straight:
             return Combination(name=CombinationName.STRAIGHT, cards=straight)
-        if len(most_of_a_kind) == 3:
-            return Combination(
-                name=CombinationName.THREE_OF_A_KIND,
-                cards=most_of_a_kind,
-            )
-        if len(most_of_a_kind) == 2:
-            if len(most_of_another_kind) == 2:
-                return Combination(
-                    name=CombinationName.TWO_PAIR,
-                    cards=most_of_a_kind + most_of_another_kind,
-                )
-            return Combination(name=CombinationName.PAIR, cards=most_of_a_kind)
-        return Combination(name=CombinationName.NOTHING, cards=self.cards[:5])
+        return self._find_most_of_a_kind()
 
-    @property
-    def most_of_a_kind(self) -> typing.List[Card]:
-        ranks = collections.defaultdict(list)
-        for card in self.cards:
-            ranks[card.rank.value].append(card)
-        most_with_same_rank = sorted(ranks.values(), key=lambda cards: len(cards))[-1]
-        return most_with_same_rank if len(most_with_same_rank) >= 2 else []
+    def _find_straight(self) -> typing.Set[Card]:
+        progression = [self._cards[0]]
 
-    @property
-    def straight(self) -> typing.List[Card]:
-        progression = [self.cards[0]]
-
-        for card in self.cards[1:]:
-            if card.rank.value == progression[-1].rank.value:
+        for card in self._cards[1:]:
+            if card.value == progression[-1].value:
                 continue  # skip same rank
-            if card.rank.value + 1 != progression[-1].rank.value:
+            if card.value + 1 != progression[-1].value:
                 progression = [card]
                 continue  # progression stopped
             progression.append(card)
             if len(progression) == 5:
-                return progression
-        return []
+                return set(progression)
+        return set()
 
-    @property
-    def flush(self) -> typing.List[Card]:
-        suits = collections.defaultdict(list)
-        for card in self.cards:
-            suits[card.suit].append(card)
+    def _find_flush(self) -> typing.Set[Card]:
+        suits = collections.defaultdict(set)
+        for card in self._cards:
+            suits[card.suit].add(card)
         for cards in suits.values():
             if len(cards) >= 5:
                 return cards
-        return []
+        return set()
 
-    def _fill_up_to_5_cards(self, combination: Combination) -> Combination:
-        number_of_cards_to_fill = 5 - len(combination.cards)
-        if number_of_cards_to_fill == 0:
-            return combination
-        if number_of_cards_to_fill < 0:
-            return Combination(name=combination.name, cards=combination.cards[:5])
-
-        hand_left = self._other_hand_left(cards_used=combination.cards)
-
-        return Combination(
-            name=combination.name,
-            cards=combination.cards + hand_left.cards[:number_of_cards_to_fill],
-        )
-
-    def _other_hand_left(self, cards_used: typing.List[Card]) -> 'Hand':
-        cards = []
-        for card in self.cards:
-            if card in cards_used:
+    def _find_most_of_a_kind(self) -> Combination:
+        combination = Combination(cards=set())
+        for cards_with_same_kind in self._greatest_cards_with_same_kind:
+            combination.cards |= cards_with_same_kind
+            if len(cards_with_same_kind) == 4:
+                combination.name = CombinationName.FOUR_OF_A_KIND
+                break
+            if len(cards_with_same_kind) == 3:
+                if combination.name == CombinationName.THREE_OF_A_KIND:
+                    combination.name = CombinationName.FULL_HOUSE
+                    break
+                combination.name = CombinationName.THREE_OF_A_KIND
                 continue
-            cards.append(card)
-        return Hand(cards=cards)
+            if len(cards_with_same_kind) == 2:
+                if combination.name == CombinationName.THREE_OF_A_KIND:
+                    combination.name = CombinationName.FULL_HOUSE
+                    break
+                if combination.name == CombinationName.PAIR:
+                    combination.name = CombinationName.TWO_PAIR
+                    break
+                combination.name = CombinationName.PAIR
+        return combination
+
+    @property
+    def _greatest_cards_with_same_kind(self) -> typing.Iterator[typing.Set[Card]]:
+        ranks = collections.defaultdict(set)
+        for card in self._cards:
+            ranks[card.value].add(card)
+        for rank in sorted(ranks, key=lambda r: (len(ranks[r]), r), reverse=True):
+            if len(ranks[rank]) < 2:
+                return
+            yield ranks[rank]
 
 
 HAND_T = typing.Tuple[CombinationName, typing.List[str]]
@@ -238,9 +223,7 @@ HAND_T = typing.Tuple[CombinationName, typing.List[str]]
 
 def hand(hole_cards: typing.List[str], community_cards: typing.List[str]) -> HAND_T:
     cards = Hand(
-        cards=[
-            Card.from_str(representation=card) for card in hole_cards + community_cards
-        ]
+        cards=[Card.from_str(raw_card) for raw_card in hole_cards + community_cards]
     )
     combination = cards.best_hand
 
