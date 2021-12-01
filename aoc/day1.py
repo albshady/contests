@@ -1,3 +1,4 @@
+import argparse
 import collections
 import typing
 
@@ -9,24 +10,12 @@ def read_measurements() -> typing.Iterator[int]:
         while line := input_file.readline():
             yield int(line.strip())
 
-def task1() -> None:
-    prev_measurement = None
-    counter = 0
+def count_measurement_increases(to_consider: int) -> int:
+    measurements: typing.Deque[int] = collections.deque(maxlen=to_consider)
+    count = 0
 
     for measurement in read_measurements():
-        if prev_measurement and measurement > prev_measurement:
-            counter += 1
-        prev_measurement = measurement
-
-    print(f"Nubmer of measurements larger than the previous ones: {counter}")
-
-
-def task2() -> None:
-    measurements: typing.Deque[int] = collections.deque(maxlen=3)
-    counter = 0
-
-    for measurement in read_measurements():
-        if len(measurements) < 3:
+        if len(measurements) < to_consider:
             measurements.append(measurement)
             continue
 
@@ -34,10 +23,30 @@ def task2() -> None:
         measurements.append(measurement)
 
         if sum(measurements) > prev_sum:
-            counter += 1
+            count += 1
 
-    print(f"Nubmer of sums larger than the previous ones: {counter}")
+    return count
+
+def task1() -> None:
+    """In the first task we are comparing only one last measurement"""
+    count = count_measurement_increases(to_consider=1)
+
+    print(f"{count} measurements are larger than the previous ones")
+
+
+def task2() -> None:
+    """In the second task we are comparing groups of three last measurements"""
+    count = count_measurement_increases(to_consider=3)
+
+    print(f"{count} measurement groups are larger than the previous ones")
 
 
 if __name__ == '__main__':
-    task2()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('task', help='Task number, 1 or 2', choices=('1', '2'))
+    args = parser.parse_args()
+
+    if int(args.task) == 1:
+        task1()
+    else:
+        task2()
