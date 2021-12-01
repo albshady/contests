@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "codewars"
+name = "contests"
 version = "0.1.0"
 description = ""
 authors = ["Albert <3litac@GMAIL.COM>"]
