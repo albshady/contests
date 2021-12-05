@@ -31,9 +31,8 @@ class BaseSolver:
     def _input(self) -> typing.Iterator[typing.Any]:
         with open(self._input_filepath, 'r') as input_file:
             for line in input_file:
-                yield self._preprocess_line(line=line)
+                yield self._preprocess_line(line=line.strip())
 
     @staticmethod
-    @abc.abstractmethod
     def _preprocess_line(line: str) -> typing.Any:
-        ...
+        return line
