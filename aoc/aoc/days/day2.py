@@ -35,7 +35,6 @@ class Solver(_base.BaseSolver):
 
         return horizontal * depth
 
-
     def solve2(self) -> int:
         """In the second task we are considering aim when moving"""
 

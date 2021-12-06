@@ -7,8 +7,6 @@ from . import _base
 
 BOARD_SIZE = 5
 
-opened_numbers = set()
-
 
 @dataclasses.dataclass
 class Cell:
@@ -19,6 +17,7 @@ class Cell:
     def rich(self) -> str:
         color = 'green' if self.marked else 'red'
         return f'[{color}]{self.value}[/{color}]'
+
 
 @dataclasses.dataclass
 class Board:
@@ -41,7 +40,7 @@ class Board:
                     continue
 
                 cell.marked = True
-                if any ((self._is_row_solved(y=y), self._is_column_solved(x=x))):
+                if any((self._is_row_solved(y=y), self._is_column_solved(x=x))):
                     self.solved = True
 
     def _is_row_solved(self, /, y: int) -> bool:
@@ -56,7 +55,6 @@ class Board:
         for row in self.field:
             rows.append('\t'.join(cell.rich for cell in row))
         return '\n'.join(rows)
-
 
 
 class Solver(_base.BaseSolver):
@@ -102,7 +100,6 @@ class Solver(_base.BaseSolver):
         print("total boards:", len(self._boards))
 
         for incoming_number in self._numbers:
-            opened_numbers.add(incoming_number)
             for board in self._boards:
                 if board.solved:
                     continue

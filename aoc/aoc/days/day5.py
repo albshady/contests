@@ -70,7 +70,6 @@ class VentLine(typing.NamedTuple):
         distance = abs(self.x0 - self.x1)
         return (start + Coordinate(x=d, y=-d) for d in range(distance + 1))
 
-
     def __repr__(self) -> str:
         return f'{self.x0},{self.y0} -> {self.x1},{self.y1}'
 

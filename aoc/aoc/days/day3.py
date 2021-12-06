@@ -41,7 +41,6 @@ class Solver(_base.BaseSolver):
             zeros, ones = self.get_zeros_ones(data=most, bit=bit)
             most = ones if len(ones) >= len(zeros) else zeros
 
-
         o2 = int(''.join([str(b) for b in most[0]]), 2)
         co2 = int(''.join([str(b) for b in least[0]]), 2)
 

@@ -32,7 +32,6 @@ class Solver(_base.BaseSolver):
         """In the first task we are comparing only one last measurement"""
         return self._count_measurement_increases(to_consider=1)
 
-
     def solve2(self) -> int:
         """In the second task we are comparing groups of three last measurements"""
         return self._count_measurement_increases(to_consider=3)
