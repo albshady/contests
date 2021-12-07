@@ -10,6 +10,7 @@ __pycache__
 
 # file types
 *.pyc
+*.debug
 
 # include dot files
 !/.gitlab-ci.yml
