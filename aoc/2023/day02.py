@@ -1,23 +1,29 @@
+from __future__ import annotations
+
+import collections
 import functools
+import math
+import operator
 import pathlib
 import typing
 
+import iter_model
 import utils
 
 
 INPUT_TXT = pathlib.Path('inputs/day02.txt')
 
-CONSTRAINTS = {
+CONSTRAINTS: CubeSet = {
     'red': 12,
     'green': 13,
     'blue': 14,
 }
 
 
-class CubeSet(typing.NamedTuple):
-    red: int = 0
-    green: int = 0
-    blue: int = 0
+class CubeSet(typing.TypedDict):
+    red: typing.NotRequired[int]
+    green: typing.NotRequired[int]
+    blue: typing.NotRequired[int]
 
 
 class GameInfo(typing.NamedTuple):
@@ -39,23 +45,42 @@ def parse_line(line: str) -> GameInfo:
     return GameInfo(game_id=game_id, sets=cube_sets)
 
 
-def check_constraints(game_info: GameInfo, constraints: dict[str, int]) -> bool:
-    for color, max_amount in constraints.items():
-        for cube_set in game_info.sets:
-            if getattr(cube_set, color) > max_amount:
-                return False
-    return True
+def check_constraints(game_info: GameInfo, constraints: CubeSet) -> bool:
+    return not (
+        iter_model.SyncIter(game_info.sets)
+        .map(lambda cube_set: cube_set.items())
+        .flatten()
+        # TODO: lambda params unpacking would be extremely useful
+        .where(lambda color_count: color_count[1] > constraints[color_count[0]])
+        .any()
+    )
+
+
+def calculate_power(game_info: GameInfo) -> int:
+    required_cubes = (
+        iter_model.SyncIter(game_info.sets)
+        .map(collections.Counter)
+        .reduce(operator.or_, initial=collections.Counter())
+    )
+    return math.prod(required_cubes.values())
 
 
 def main() -> None:
-    answer = (
+    answer_1 = (
         utils.read_lines(INPUT_TXT)
         .map(parse_line)
         .where(functools.partial(check_constraints, constraints=CONSTRAINTS))
+        .map(operator.attrgetter('game_id'))
         # TODO: reduce() has typing issues
-        .reduce(lambda valid_sum, game_info: valid_sum + game_info.game_id, initial=0)
+        .reduce(operator.add, initial=0)
     )
-    print(answer)
+    answer_2 = (
+        utils.read_lines(INPUT_TXT)
+        .map(parse_line)
+        .map(calculate_power)
+        .reduce(operator.add, initial=0)
+    )
+    print(answer_1, answer_2, sep='\n')
 
 
 if __name__ == "__main__":
