@@ -37,6 +37,7 @@ authors = ["Albert <3litac@GMAIL.COM>"]
 [tool.poetry.dependencies]
 python = "^3.10"
 rich = "^10.15.2"
+iter-model = "^2.3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2.5"
