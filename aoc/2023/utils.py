@@ -37,3 +37,15 @@ def print_decorator(func: typing.Callable[PS, T]) -> typing.Callable[PS, T]:
         return result
 
     return wrapper
+
+
+def print_with_context(context):
+    return functools.partial(print_identity, context=context)
+
+
+def print_identity(x, context=None):
+    if context is None:
+        print(x)
+    else:
+        print(context, x)
+    return x
