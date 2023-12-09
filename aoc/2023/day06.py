@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import operator
 import pathlib
 import typing
 
@@ -44,18 +45,16 @@ def parse_record(lines: typing.Iterable[str]) -> Record:
 
 
 def number_of_ways_to_beat(record: Record) -> int:
-    first_winning = (
+    return (
         iters.Iter(range(record.time))
         .map(lambda x: x * (record.time - x))
         .enumerate()
         .filter(lambda p: p[1] > record.distance)
+        .map(operator.itemgetter(0))
         .first()
+        .map(lambda first_winning: record.time - 2 * first_winning + 1)
+        .unwrap_or(0)
     )
-    if first_winning.is_null():
-        return 0
-    first_winning = first_winning.unwrap()[0]
-    last_winning = record.time - first_winning
-    return last_winning - first_winning + 1
 
 
 if __name__ == "__main__":
