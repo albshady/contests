@@ -4,7 +4,7 @@ import operator
 import pathlib
 import typing
 
-import iter_model
+import iters
 import utils
 
 
@@ -51,17 +51,13 @@ class LazyMapping(typing.NamedTuple):
     range_maps: list[RangeMap]
 
     def map(self, value: int) -> int:
-        try:
-            found = (
-                iter_model.SyncIter(self.range_maps)
-                .map(lambda range_map: range_map.map_single(value))
-                .where(lambda value: value is not None)
-                .first()
-            )
-        except StopIteration:
-            found = None
-        found = found or value
-        return found
+        return (
+            iters.Iter(self.range_maps)
+            .map(lambda range_map: range_map.map_single(value))
+            .filter(lambda x: x is not None)
+            .first()
+            .unwrap_or(value)
+        ) or value  # TODO: filter_none would be useful
 
     def map_range(self, rng: Range) -> list[Range]:
         unmapped = [rng]
@@ -99,10 +95,10 @@ class Almanac(typing.NamedTuple):
 
 def main() -> None:
     almanac = deserialize_almanac(utils.read_lines(INPUT_TXT))
-    answer_1 = iter_model.SyncIter(almanac.seeds).map(almanac.find_seed_location).min()
+    answer_1 = iters.Iter(almanac.seeds).map(almanac.find_seed_location).min()
     answer_2 = (
-        iter_model.SyncIter(almanac.seeds)
-        .batches(2)
+        iters.Iter(almanac.seeds)
+        .pairs()
         .map(lambda pair: Range(start=pair[0], length=pair[1]))
         .map(almanac.find_locations)
         .flatten()

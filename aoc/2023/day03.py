@@ -7,7 +7,7 @@ import operator
 import pathlib
 import typing
 
-import iter_model
+import iters
 import utils
 
 
@@ -26,7 +26,7 @@ class Number(typing.NamedTuple):
     end: int
 
     @property
-    @iter_model.sync_iter
+    @iters.wrap_iter
     def adjacent_coordinates(self) -> typing.Iterable[Coordinate]:
         for row in range(self.row - 1, self.row + 2):
             for column in range(self.start - 1, self.end + 2):
@@ -34,13 +34,13 @@ class Number(typing.NamedTuple):
 
 
 def main() -> None:
-    schematic = utils.read_lines(INPUT_TXT).to_list()
+    schematic = utils.read_lines(INPUT_TXT).list()
     symbols = locate_symbols(schematic, predicate=is_symbol)
     answer_1 = (
         locate_numbers(schematic)
-        .where(functools.partial(is_adjacent_to_symbol, symbols=symbols))
+        .filter(functools.partial(is_adjacent_to_symbol, symbols=symbols))
         .map(operator.attrgetter('value'))
-        .reduce(operator.add, initial=0)
+        .sum()
     )
 
     asterisks = locate_symbols(schematic, predicate=lambda s: s == '*')
@@ -56,20 +56,20 @@ def main() -> None:
         .reduce(
             lambda d1, d2: {
                 key: d1.get(key, []) + d2.get(key, []) for key in d1.keys() | d2.keys()
-            },
-            initial={},
+            }
         )
+        .unwrap()
     )
     answer_2 = (
-        iter_model.SyncIter(asterisks_to_numbers.values())
-        .where(lambda v: len(v) == 2)
+        iters.Iter(asterisks_to_numbers.values())
+        .filter(lambda v: len(v) == 2)
         .map(math.prod)
-        .reduce(operator.add, initial=0)
+        .sum()
     )
     print(answer_1, answer_2, sep='\n')
 
 
-@iter_model.sync_iter
+@iters.wrap_iter
 def locate_numbers(schematic: list[str]) -> typing.Iterator[Number]:
     for row_ix, row in enumerate(schematic):
         start: int | None = None
@@ -114,7 +114,7 @@ def is_symbol(char: str) -> bool:
 def is_adjacent_to_symbol(
     number: Number, symbols: collections.defaultdict[Coordinate, bool]
 ) -> bool:
-    return number.adjacent_coordinates.where(lambda c: symbols[c]).any()
+    return number.adjacent_coordinates.filter(lambda c: symbols[c]).any()
 
 
 if __name__ == "__main__":

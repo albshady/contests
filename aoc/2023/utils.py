@@ -3,14 +3,14 @@ import pathlib
 import time
 import typing
 
-import iter_model
+import iters
 
 
 PS = typing.ParamSpec('PS')
 T = typing.TypeVar('T')
 
 
-@iter_model.sync_iter
+@iters.wrap_iter
 def read_lines(filepath: pathlib.Path) -> typing.Iterable[str]:
     with open(filepath) as file:
         for line in file:

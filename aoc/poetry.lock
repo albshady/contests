@@ -512,17 +512,6 @@ colors = ["colorama (>=0.4.6)"]
 plugins = ["setuptools"]
 
 [[package]]
-name = "iter-model"
-version = "2.3.0"
-description = "iter-model uses a method approach instead of individual functions to work with iterable objects."
-optional = false
-python-versions = ">=3.10,<4.0"
-files = [
-    {file = "iter_model-2.3.0-py3-none-any.whl", hash = "sha256:bcc08fb4ef8feb16c24175047db255898fa146aec6a83f062f61b08cf288cb0b"},
-    {file = "iter_model-2.3.0.tar.gz", hash = "sha256:8be3c0dd1937040a8e980995e7c3a9087341bb03d63be9cecbee8fc50921519e"},
-]
-
-[[package]]
 name = "iters"
 version = "0.15.0"
 description = "Composable external iteration."
@@ -1454,4 +1443,4 @@ requests = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3f67253c6dc06ba30acc17efa18a6cd3e70e3e3e9878faa1b673c0efcdbedec7"
+content-hash = "7228a14f1409707e2e05dbc0702bab16fcc08989d3177ef52a34ae954325e511"

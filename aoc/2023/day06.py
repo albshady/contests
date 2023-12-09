@@ -28,9 +28,9 @@ def parse_records(lines: typing.Iterable[str]) -> iters.Iter[Record]:
     def _parse_values(line: str) -> iters.Iter[int]:
         return iters.Iter(line.split()).skip(1).map(int)
 
-    times, distances = lines
-    times = _parse_values(times)
-    distances = _parse_values(distances)
+    raw_times, raw_distances = lines
+    times = _parse_values(raw_times)
+    distances = _parse_values(raw_distances)
     return times.zip(distances).map(lambda td: Record(time=td[0], distance=td[1]))
 
 

@@ -7,7 +7,7 @@ import operator
 import pathlib
 import typing
 
-import iter_model
+import iters
 import utils
 
 
@@ -47,20 +47,20 @@ def parse_line(line: str) -> GameInfo:
 
 def check_constraints(game_info: GameInfo, constraints: CubeSet) -> bool:
     return not (
-        iter_model.SyncIter(game_info.sets)
+        iters.Iter(game_info.sets)
         .map(lambda cube_set: cube_set.items())
         .flatten()
-        # TODO: lambda params unpacking would be extremely useful
-        .where(lambda color_count: color_count[1] > constraints[color_count[0]])
+        .filter(lambda color_count: color_count[1] > constraints[color_count[0]])
         .any()
     )
 
 
 def calculate_power(game_info: GameInfo) -> int:
     required_cubes = (
-        iter_model.SyncIter(game_info.sets)
+        iters.Iter(game_info.sets)
         .map(collections.Counter)
-        .reduce(operator.or_, initial=collections.Counter())
+        .reduce(operator.or_)
+        .unwrap()
     )
     return math.prod(required_cubes.values())
 
@@ -69,17 +69,11 @@ def main() -> None:
     answer_1 = (
         utils.read_lines(INPUT_TXT)
         .map(parse_line)
-        .where(functools.partial(check_constraints, constraints=CONSTRAINTS))
+        .filter(functools.partial(check_constraints, constraints=CONSTRAINTS))
         .map(operator.attrgetter('game_id'))
-        # TODO: reduce() has typing issues
-        .reduce(operator.add, initial=0)
+        .sum()
     )
-    answer_2 = (
-        utils.read_lines(INPUT_TXT)
-        .map(parse_line)
-        .map(calculate_power)
-        .reduce(operator.add, initial=0)
-    )
+    answer_2 = utils.read_lines(INPUT_TXT).map(parse_line).map(calculate_power).sum()
     print(answer_1, answer_2, sep='\n')
 
 

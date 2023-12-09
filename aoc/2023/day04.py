@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import collections
-import operator
 import pathlib
 import typing
 
@@ -39,7 +38,8 @@ def main() -> None:
         utils.read_lines(INPUT_TXT)
         .map(parse_line)
         .map(Card.calculate_points)
-        .reduce(operator.add, initial=0)
+        .sum()
+        .unwrap()
     )
 
     occurencies: collections.Counter[int] = collections.Counter()
